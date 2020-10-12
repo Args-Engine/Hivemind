@@ -43,10 +43,10 @@ class FrontendModule(ttk.Frame, ModuleBase):
         self.bind('<Destroy>', self.on_destroy_event)
 
     def build_gui(self):
-        self.var.address = tk.StringVar(self, "localhost")
+        self.var.address = tk.StringVar(self, "192.168.0.27")
         self.gui.address = ttk.Entry(self)
 
-        self.var.location = tk.StringVar(self, "insert path")
+        self.var.location = tk.StringVar(self, "C:\\Users\\User\\Desktop\\Hivetest")
         self.gui.location = ttk.Entry(self)
 
         self.atomic.connected = False

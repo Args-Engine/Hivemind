@@ -23,19 +23,22 @@ class WorkspaceSetup(ModuleBase):
         if message_name == "WorkspaceResponse":
 
             if 'workspace-base-path' in session:
-                base_dir = session['workspace-base-dir']
-
-                shutil.copytree(base_dir, os.path.join(share_drive_letter, message_value.workspace))
+                base_dir = session['workspace-base-path']
+                print(base_dir)
+                print(os.path.join(share_drive_letter +"/" , message_value.workspace)+"/")
+                shutil.copytree(base_dir, os.path.join(share_drive_letter +"/" , message_value.workspace)+"/",dirs_exist_ok=True)
                 if 'workspaces' not in session:
                     session['workspaces'] = {message_value.workspace: base_dir}
 
                 try:
-                    with open(os.path.join(session['workspace-base-dir'], "hivemind.txt"), "r") as file:
+                    print(os.path.join(base_dir, "hivemind.txt"))
+                    with open(os.path.join(base_dir, "hivemind.txt"), "r") as file:
                         tasks = file.readlines()
-                        session.to_send.put(ExecutionRequest(tasks, message_value))
+                        session.to_send.put(ExecutionRequest(tasks, message_value.workspace))
 
                 except FileNotFoundError:
-                    return EmitError("Error: directory was invalid! Does not contain hivemind.txt")
+                    print("error opening file")
+                    return EmitError("Error: directory is invalid! Does not contain hivemind.txt")
 
             else:
                 return EmitError("Error: received workspace response without active workspace location")

@@ -10,7 +10,7 @@ class Runner:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=True,
-            cwd=workspace
+            cwd="K:/" + workspace
         )
 
     def done(self) -> bool:
@@ -18,4 +18,5 @@ class Runner:
         if p is None:
             return False
         else:
+            print(self.process.communicate()[0] + self.process.communicate()[1])
             return True
