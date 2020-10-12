@@ -1,8 +1,10 @@
 import shlex
 import subprocess
 from xmlrpc.server import SimpleXMLRPCServer
-
+import win32wnet
+import win32netcon
 import os
+import pywintypes
 
 base_path = r'C:\hivemind'
 share_name = "HUNC"
@@ -17,7 +19,7 @@ net_share_create = "NET SHARE \"" + share_name + "\"=\"" + base_path + "\" /GRAN
 
 net_share_destroy = r"NET SHARE " + share_name + r" /DELETE /YES"
 
-net_share_connect = r"NET USE K: \\{}\\" + share_name + r"\ /USER:{} {}"
+net_share_connect = r"NET USE K: \"\\{}"'\\' + share_name + "\" /USER:\"{}\" {}"
 
 ps_create_elevated_proc = rf'powershell -Command Start-Process -Verb runas python -ArgumentList "{os.path.realpath(__file__)}" '
 
@@ -25,7 +27,6 @@ fake = False
 
 
 def _invoke_string_template(template: str, *args):
-    print(template.format(*args))
     if not fake:
         return subprocess.Popen(shlex.split(template.format(*args)),
                                 stdout=subprocess.PIPE,
@@ -61,7 +62,6 @@ def NetDeleteUser(user: str):
 def NetShareCreate(user: str):
     p = _invoke_string_template(net_share_create, user)
     return p.communicate()[0] + p.communicate()[1]
-    return False
 
 
 def NetShareDestroy():
@@ -70,11 +70,27 @@ def NetShareDestroy():
 
 
 def NetShareConnect(remote: str, user: str, password: str):
-    process = _invoke_string_template(net_share_connect, remote, user, password)
-    err = process.returncode
+    letter = "K:"
+    remote = f"\\\\{remote}\\HUNC"
+    # resource = win32wnet.NETRESOURCE
+    # resource.
+    try:
+        win32wnet.WNetAddConnection2(win32netcon.RESOURCETYPE_DISK,letter,remote,None,user,password)
+    except pywintypes.error as err:
+        if err.winerror == 85:
+            return True
+        else:
+            return False
+    return True
+        
+
+"""     p = _invoke_string_template(net_share_connect, remote, user, password,shlex_mode=False)
+    err = p.returncode
+
+    print( p.communicate()[0] + p.communicate()[1])
     if err != 0:
         return False
-    return True
+    return True """
 
 
 if __name__ == "__main__":
