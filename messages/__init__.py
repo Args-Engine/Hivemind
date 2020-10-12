@@ -4,8 +4,9 @@ from .execution_response import ExecutionResponse
 from .ping import Ping
 from .available_cores import AvailableCores
 from .tasks import Tasks
-from .workspace_request import WorkspaceResponse
-from .workspace_response import WorkspaceRequest
+from .workspace_connect import WorkspaceConnect
+from .workspace_request import WorkspaceRequest
+from .workspace_response import WorkspaceResponse
 
 msg_name_table = {
     Ping: "Ping",
@@ -15,7 +16,8 @@ msg_name_table = {
     ExecutionResponse: "ExecutionResponse",
     ExecutionDone: "ExecutionDone",
     WorkspaceRequest: "WorkspaceRequest",
-    WorkspaceResponse: "WorkspaceResponse"
+    WorkspaceResponse: "WorkspaceResponse",
+    WorkspaceConnect: "WorkspaceConnect"
 }
 
 

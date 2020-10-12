@@ -16,18 +16,22 @@ class Client(threading.Thread):
         self.initialized = False
         self.sock: socket = None
 
-        self.established = False
-
     def initialize_socket(self):
 
         # create socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # attempt to connect socket repeatedly
-        while self.sock.connect_ex((self.middleware.addr, PORT)) != 0 and self.keep_alive:
+        ret = 1
+        while self.keep_alive and ret != 0:
+            try:
+                ret = self.sock.connect_ex((self.middleware.addr, PORT))
+            except socket.gaierror:
+                print("Bad hostname!")
             print("Connection failed, host not up!")
 
         self.initialized = True
+        self.middleware.connect_event(self.sock)
 
     def run(self):
         # check if initialized and run client

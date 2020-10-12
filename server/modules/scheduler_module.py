@@ -12,9 +12,8 @@ from server.session import Session
 class SchedulerModule(ModuleBase):
 
     def __init__(self):
-        super().__init__()
-        self.interests = ["AvailableCores",
-                          "ExecutionRequest"]
+        super().__init__(["AvailableCores",
+                          "ExecutionRequest"])
         self.tasks: Queue[Tuple[str, str]] = Queue()
         self.max_cpus = 0
 

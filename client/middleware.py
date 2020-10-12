@@ -1,7 +1,10 @@
+from socket import socket
+
 from client.session import Session
 from common.module_base import ModuleBase
 from typing import List
 
+from common.update_returns import ApplicationExit , EmitError
 from messages import msg_name_table
 
 
@@ -12,6 +15,15 @@ class Middleware:
         self.modules = modules
         self.session = Session()
         self.addr = addr
+
+        for module in modules:
+            if getattr(module, 'onRegister', None) is not None and callable(module.onRegister):
+                module.onRegister(modules, self)
+
+    def connect_event(self, _: socket):
+        for module in self.modules:
+            if getattr(module, 'onConnect', None) is not None and callable(module.onConnect):
+                module.onConnect(self.session)
 
     def has_message(self):
         return self.session.to_send.qsize() > 0
@@ -31,8 +43,14 @@ class Middleware:
             if name in module.interests or type(message) in module.interests:
                 module.handle(name, message, self.session)
 
-    def update(self):
+    def update(self) -> bool:
+        # print(self.addr)
         for module in self.modules:
             if getattr(module, 'onUpdate', None) is not None and callable(module.onUpdate):
-                module.onUpdate()
-        pass
+                response = module.onUpdate()
+                if type(response) is ApplicationExit:
+                    return False
+                elif type(response) is EmitError:
+                    print(response.error)
+
+        return True

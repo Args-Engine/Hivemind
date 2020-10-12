@@ -2,6 +2,7 @@ from datetime import datetime
 from socket import socket
 from typing import List, Dict, Any, NoReturn
 
+from common.update_returns import ApplicationExit
 from messages import msg_name_table, Ping
 from common.module_base import ModuleBase
 from server.session import Session
@@ -12,6 +13,18 @@ class Middleware:
     def __init__(self, modules: List[ModuleBase]):
         self.sessions: Dict[socket, Session] = {}
         self.modules = modules
+
+        for module in modules:
+            if getattr(module, 'onRegister', None) is not None and callable(module.onRegister):
+                module.onRegister(modules,self)
+
+    def connect_event(self, session_key: socket):
+        if session_key not in self.sessions:
+            self.sessions[session_key] = Session()
+
+        for module in self.modules:
+            if getattr(module, 'onConnect', None) is not None and callable(module.onConnect):
+                module.onConnect(self.sessions[session_key] )
 
     def has_message_for(self, session_key: socket) -> bool:
 
@@ -66,7 +79,10 @@ class Middleware:
     def remove(self, session_key: socket) -> NoReturn:
         self.sessions.pop(session_key)
 
-    def update(self):
+    def update(self) -> bool:
         for module in self.modules:
             if getattr(module, 'onUpdate', None) is not None and callable(module.onUpdate):
-                module.onUpdate()
+                if type(module.onUpdate()) is ApplicationExit:
+                    return False
+
+        return True

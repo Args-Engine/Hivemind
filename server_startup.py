@@ -7,9 +7,9 @@ from server.middleware import Middleware
 
 if __name__ == "__main__":
 
-    modules = [PingPrinterModule(),
-               SchedulerModule(),
-               StorageModule()]
+    modules = [SchedulerModule(),
+               StorageModule(),
+               AliveHelper()]
 
     middleware = Middleware(modules=modules)
 
@@ -17,9 +17,7 @@ if __name__ == "__main__":
 
     server.start()
 
-    h = AliveHelper()
-
-    while h.alive:
-        middleware.update()
+    while middleware.update():
+        pass
 
     server.keep_alive = False

@@ -7,8 +7,7 @@ from common.session_base import SessionBase
 class PingPrinterModule(ModuleBase):
 
     def __init__(self):
-        super().__init__()
-        self.interests = ["Ping"]
+        super().__init__(["Ping"])
 
     def handle(self, message_name: str, message_value, session: SessionBase) -> NoReturn:
         if message_name == "Ping":

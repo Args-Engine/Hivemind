@@ -19,12 +19,10 @@ class StorageModule(ModuleBase):
     share = '\\\\' + gethostname() + '\\' + share_name
 
     def __init__(self):
-        super().__init__()
-
-        self.interests = [
+        super().__init__([
             "Ping",
             "WorkspaceRequest"
-        ]
+        ])
 
         # generate user and password for the share
         self.password = ''.join(s_choice(alphabet) for _ in range(128))
@@ -55,12 +53,12 @@ class StorageModule(ModuleBase):
 
     def handle(self, message_name: str, message_value, session: Session) -> NoReturn:
         if 'unc_connected' not in session:
-            session.to_send(WorkspaceConnect(self.user, self.password, self.share))
+            session.to_send.put(WorkspaceConnect(self.user, self.password, self.share))
 
         if message_name == "WorkspaceRequest":
             folder = ''.join(s_choice(alphabet) for i in range(64))
             self._ensure_directory(base_path + '\\' + folder)
-            session.to_send(WorkspaceResponse(workspace=folder))
+            session.to_send.put(WorkspaceResponse(workspace=folder))
 
     @staticmethod
     def _ensure_directory(directory):

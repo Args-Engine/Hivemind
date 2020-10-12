@@ -51,12 +51,10 @@ def NetCheckAdmin() -> bool:
 def NetCreateUser(user: str, password: str):
     p = _invoke_string_template(net_create_user, user, password)
     return p.communicate()[0] + p.communicate()[1]
-    return False
 
 
 def NetDeleteUser(user: str):
     _invoke_string_template(net_delete_user, user)
-
     return False
 
 
@@ -72,8 +70,11 @@ def NetShareDestroy():
 
 
 def NetShareConnect(remote: str, user: str, password: str):
-    _invoke_string_template(net_share_connect, remote, user, password)
-    return False
+    process = _invoke_string_template(net_share_connect, remote, user, password)
+    err = process.returncode
+    if err != 0:
+        return False
+    return True
 
 
 if __name__ == "__main__":

@@ -11,8 +11,8 @@ from messages import Tasks, Ping, AvailableCores
 class DispatcherModule(ModuleBase):
 
     def __init__(self):
-        super().__init__()
-        self.interests = ["Tasks", "Ping"]
+        super().__init__(["Tasks", "Ping"])
+
         self.task_queue: Queue[Tuple[str, str]] = Queue()
         self.genesis_not_sent = True
         self.runners: List[Runner] = []

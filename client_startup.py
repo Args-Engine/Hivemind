@@ -1,13 +1,14 @@
 from client.modules.dispatcher_module import DispatcherModule
+from client.modules.frontend import FrontendModule
 from client.net import Client
 from client.middleware import Middleware
-from common.alive_helper import AliveHelper
 from common.ping_printer_module import PingPrinterModule
 
 if __name__ == "__main__":
 
     modules = [PingPrinterModule(),
-               DispatcherModule()]
+               DispatcherModule(),
+               FrontendModule()]
 
     middleware = Middleware(modules=modules)
 
@@ -15,7 +16,7 @@ if __name__ == "__main__":
 
     client.start()
 
-    h = AliveHelper()
+    while middleware.update():
+        pass
 
-    while h.alive:
-        middleware.update()
+    client.keep_alive = False

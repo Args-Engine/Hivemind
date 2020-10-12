@@ -63,6 +63,7 @@ class Server(threading.Thread):
                 # Connect new peer
                 client_sock, addr = self.socket.accept()
                 self.read_list.append(client_sock)
+                self.middleware.connect_event(self.socket)
             else:
 
                 try:
