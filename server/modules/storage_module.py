@@ -16,7 +16,7 @@ alphabet = string.ascii_letters + string.digits
 
 
 class StorageModule(ModuleBase):
-    share = '\\\\' + gethostname() + '\\' + share_name
+    hostname = gethostname()
 
     def __init__(self):
         super().__init__([
@@ -53,11 +53,15 @@ class StorageModule(ModuleBase):
 
     def handle(self, message_name: str, message_value, session: Session) -> NoReturn:
         if 'unc_connected' not in session:
-            session.to_send.put(WorkspaceConnect(self.user, self.password, self.share))
+            session.to_send.put(WorkspaceConnect(self.user, self.password, self.hostname))
+            session['unc_connected'] = True
 
         if message_name == "WorkspaceRequest":
+            print("Received Workspace Request")
             folder = ''.join(s_choice(alphabet) for i in range(64))
             self._ensure_directory(base_path + '\\' + folder)
+
+            print("Sending WorkspaceResponse")
             session.to_send.put(WorkspaceResponse(workspace=folder))
 
     @staticmethod

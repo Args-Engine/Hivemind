@@ -41,7 +41,7 @@ class SchedulerModule(ModuleBase):
 
                         # send the finish signal to the session of this workspace &
                         # delete the workspace
-                        session.to_send.put(ExecutionDone())
+                        session.to_send.put(ExecutionDone(workspace))
                         del self.workspaces[workspace]
                     else:
 

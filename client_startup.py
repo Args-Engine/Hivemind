@@ -1,5 +1,6 @@
 from client.modules.dispatcher_module import DispatcherModule
 from client.modules.frontend import FrontendModule
+from client.modules.share_connector import ShareConnector
 from client.modules.workspace_setup import WorkspaceSetup
 from client.net import Client
 from client.middleware import Middleware
@@ -11,6 +12,7 @@ if __name__ == "__main__":
     modules = [PingPrinterModule(),
                DispatcherModule(),
                FrontendModule(),
+               ShareConnector(),
                WorkspaceSetup()]
 
     middleware = Middleware(modules=modules)

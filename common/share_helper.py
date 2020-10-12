@@ -8,6 +8,8 @@ import pywintypes
 
 base_path = r'C:\hivemind'
 share_name = "HUNC"
+share_drive_letter = 'K:'
+
 
 net_check_admin = r"NET SESSIONS"
 
@@ -18,8 +20,6 @@ net_delete_user = r"NET USERS {} /DELETE"
 net_share_create = "NET SHARE \"" + share_name + "\"=\"" + base_path + "\" /GRANT:\"{}\",FULL"
 
 net_share_destroy = r"NET SHARE " + share_name + r" /DELETE /YES"
-
-net_share_connect = r"NET USE K: \"\\{}"'\\' + share_name + "\" /USER:\"{}\" {}"
 
 ps_create_elevated_proc = rf'powershell -Command Start-Process -Verb runas python -ArgumentList "{os.path.realpath(__file__)}" '
 
@@ -70,27 +70,15 @@ def NetShareDestroy():
 
 
 def NetShareConnect(remote: str, user: str, password: str):
-    letter = "K:"
     remote = f"\\\\{remote}\\HUNC"
-    # resource = win32wnet.NETRESOURCE
-    # resource.
     try:
-        win32wnet.WNetAddConnection2(win32netcon.RESOURCETYPE_DISK,letter,remote,None,user,password)
+        win32wnet.WNetAddConnection2(win32netcon.RESOURCETYPE_DISK, share_drive_letter, remote, None, user, password)
     except pywintypes.error as err:
         if err.winerror == 85:
             return True
         else:
             return False
     return True
-        
-
-"""     p = _invoke_string_template(net_share_connect, remote, user, password,shlex_mode=False)
-    err = p.returncode
-
-    print( p.communicate()[0] + p.communicate()[1])
-    if err != 0:
-        return False
-    return True """
 
 
 if __name__ == "__main__":

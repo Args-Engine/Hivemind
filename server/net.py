@@ -69,7 +69,7 @@ class Server(threading.Thread):
                 try:
                     # receive Data
                     data = sock.recv(MAX_MSG_LEN)
-                except ConnectionResetError:
+                except (ConnectionResetError, ConnectionAbortedError):
 
                     # Connection Terminated
                     print("Bad peer, disconnected")
@@ -95,5 +95,15 @@ class Server(threading.Thread):
                 if frame.empty():
                     frame.add_message(Ping())
 
-                # Send our response
-                sock.send(frame.encode())
+                try:
+                    # Send our response
+                    sock.send(frame.encode())
+                except (ConnectionResetError, ConnectionAbortedError):
+
+                    # Connection Terminated
+                    print("Bad peer, disconnected")
+                    self.read_list.remove(sock)
+                    self.middleware.remove(sock)
+                    continue
+
+
