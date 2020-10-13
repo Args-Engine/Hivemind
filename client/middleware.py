@@ -28,7 +28,7 @@ class Middleware:
 
     # check if a message is available
     def has_message(self):
-        return self.session.to_send.qsize() > 0
+        return not self.session.to_send.empty()
 
     # get a message from the Queue
     def emit(self):
