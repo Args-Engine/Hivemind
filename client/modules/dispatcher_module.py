@@ -14,19 +14,17 @@ class DispatcherModule(ModuleBase):
         super().__init__(["Tasks", "Ping"])
 
         self.task_queue: Queue[Tuple[str, str, str]] = Queue()
-        self.genesis_not_sent = True
         self.runners: List[Runner] = []
         self.in_use = 0
         self.finished_tasks_per_workspace: Queue[Tuple[str,str]] = Queue()
 
+
+    def onConnect(self, session: SessionBase):
+
+        # inform the server about how many cores we have
+        session.to_send.put(AvailableCores(available=cpu_count(), per_workspace={}))
+
     def handle(self, message_name: str, message_value: Union[Tasks, Ping], session: SessionBase) -> NoReturn:
-
-        # check if a ping as sent and if this is the first ping we received
-        if message_name == "Ping" and self.genesis_not_sent:
-            self.genesis_not_sent = False
-
-            # if so send how many cores are available
-            session.to_send.put(AvailableCores(available=cpu_count(), per_workspace={}))
 
         # check if we received tasks from the server
         if message_name == "Tasks":

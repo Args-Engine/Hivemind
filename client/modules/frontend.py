@@ -18,31 +18,40 @@ class FrontendModule(ttk.Frame, ModuleBase):
     def __init__(self, master=tk.Tk()):
         ModuleBase.__init__(self, [])
         ttk.Frame.__init__(self, master)
-        self.session: Session = None
-        self.should_close = False
 
+        # some naughty variables we are going to need later
+        self.session = None
+        self.should_close = False
+        self.middleware = None
+
+        # apply some anti-eye-bleed
         if os.name == 'nt':
             ttk.Style().theme_use('vista')
 
+        # make some namespace to keep this module at least a bit organized
         self.gui = types.SimpleNamespace()
         self.var = types.SimpleNamespace()
         self.atomic = types.SimpleNamespace()
 
+        # generate window
         self.master = master
         self.pack()
 
+        # setup gui widgets
         self.build_gui()
         self.configure_gui()
         self.pack_gui()
 
+        # configure window
         self.config(height='200', width='200')
         self.pack(ipady='50', side='top')
 
-        self.middleware = None
-
+        # make sure we receive the close event
         self.bind('<Destroy>', self.on_destroy_event)
 
     def build_gui(self):
+        # generate widgets & variables
+
         self.var.address = tk.StringVar(self, "192.168.0.27")
         self.gui.address = ttk.Entry(self)
 
@@ -58,6 +67,8 @@ class FrontendModule(ttk.Frame, ModuleBase):
         self.gui.connect_client = ttk.Button(self, command=self.on_connect_client_pressed)
 
     def configure_gui(self):
+        # configure widgets
+
         self.gui.address.config(takefocus=False, textvariable=self.var.address)
         self.gui.location.config(takefocus=False, textvariable=self.var.location)
         self.gui.connected.config(state='disabled', text='connected', var=self.var.connected)
@@ -66,6 +77,8 @@ class FrontendModule(ttk.Frame, ModuleBase):
         self.gui.connect_client.config(text="Connect")
 
     def pack_gui(self):
+        # set display parameters for widgets
+
         self.gui.address.pack(anchor='n', ipadx='50', padx='20', pady='20', side='left')
         self.gui.location.pack(anchor='n', ipadx='50', padx='20', pady='20', side='left')
         self.gui.connected.pack(side='bottom')
@@ -74,6 +87,8 @@ class FrontendModule(ttk.Frame, ModuleBase):
         self.gui.connect_client.pack(anchor='n', pady='20', side='left')
 
     def onRegister(self, modules, middleware):
+        # make sure we have a reference to the middleware
+
         if getattr(middleware, 'addr', None) is not None:
             self.middleware = middleware
 
@@ -83,11 +98,14 @@ class FrontendModule(ttk.Frame, ModuleBase):
         else:
             return ApplicationExit()
 
+        # update all vars from atomics
         for k, v in vars(self.atomic).items():
             if k in vars(self.var):
                 vars(self.var)[k].set(v)
 
     def onConnect(self, session):
+        # update connection variable
+
         self.atomic.connected = True
         self.session = session
         # self.gui.location.config(state='disabled')
@@ -96,14 +114,20 @@ class FrontendModule(ttk.Frame, ModuleBase):
         self.should_close = True
 
     def on_choose_dir_pressed(self):
+        # open file dialog and update location var
+
         name = filedialog.askdirectory()
         self.var.location.set(name)
 
     def on_send_commands_pressed(self):
+        # send a workspace request and update the session to have a base-path
+
         if self.session is not None:
             self.session.to_send.put(WorkspaceRequest())
             self.session['workspace-base-path'] = self.var.location.get()
 
     def on_connect_client_pressed(self):
+        # update the variable of the middleware (if it exists)
+
         if self.middleware is not None:
             self.middleware.addr = self.var.address.get()

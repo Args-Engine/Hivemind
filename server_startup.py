@@ -1,9 +1,12 @@
 from common.alive_helper import AliveHelper
-from common.ping_printer_module import PingPrinterModule
+from server.middleware import Middleware
 from server.modules.scheduler_module import SchedulerModule
 from server.modules.storage_module import StorageModule
 from server.net import Server
-from server.middleware import Middleware
+
+# check client_startup.py for how this work
+# the server is basically the same, but with different layers
+# technically a module could be compatible for both server and client
 
 if __name__ == "__main__":
 

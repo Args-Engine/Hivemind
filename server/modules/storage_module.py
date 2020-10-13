@@ -20,7 +20,6 @@ class StorageModule(ModuleBase):
 
     def __init__(self):
         super().__init__([
-            "Ping",
             "WorkspaceRequest"
         ])
 
@@ -51,12 +50,15 @@ class StorageModule(ModuleBase):
         # destroy the folder
         shutil.rmtree(base_path)
 
-    def handle(self, message_name: str, message_value, session: Session) -> NoReturn:
+    def onConnect(self, session: Session):
+        # make sure that the client is connected to the storage share
         if 'unc_connected' not in session:
             session.to_send.put(WorkspaceConnect(self.user, self.password, self.hostname))
             session['unc_connected'] = True
 
+    def handle(self, message_name: str, message_value, session: Session) -> NoReturn:
         if message_name == "WorkspaceRequest":
+            # the client wants a workspace to work with
             print("Received Workspace Request")
             folder = ''.join(s_choice(alphabet) for i in range(64))
             self._ensure_directory(base_path + '\\' + folder)

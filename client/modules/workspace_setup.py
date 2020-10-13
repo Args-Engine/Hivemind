@@ -23,15 +23,22 @@ class WorkspaceSetup(ModuleBase):
         if message_name == "WorkspaceResponse":
 
             if 'workspace-base-path' in session:
+
+                # local and remote directories
                 base_dir = session['workspace-base-path']
-                print(base_dir)
-                print(os.path.join(share_drive_letter +"/" , message_value.workspace)+"/")
-                shutil.copytree(base_dir, os.path.join(share_drive_letter +"/" , message_value.workspace)+"/",dirs_exist_ok=True)
+                network_dir = os.path.join(share_drive_letter + "/", message_value.workspace) + "/"
+
+                print("Received Workspace: " + network_dir)
+
+                # copy files to remote
+                shutil.copytree(base_dir, network_dir, dirs_exist_ok=True)
+
+                # create workspaces field
                 if 'workspaces' not in session:
                     session['workspaces'] = {message_value.workspace: base_dir}
 
+                # open instructions file & send to server
                 try:
-                    print(os.path.join(base_dir, "hivemind.txt"))
                     with open(os.path.join(base_dir, "hivemind.txt"), "r") as file:
                         tasks = file.readlines()
                         session.to_send.put(ExecutionRequest(tasks, message_value.workspace))
@@ -44,15 +51,18 @@ class WorkspaceSetup(ModuleBase):
                 return EmitError("Error: received workspace response without active workspace location")
 
         if message_name == "ExecutionResponse":
+            # inform the user if the server refused execution
+
             if not message_value.accepted:
                 return EmitError("Server refused execution of our script!")
 
         if message_name == "ExecutionDone":
             print(f"Environment {session['workspaces'][message_value.workspace]} done")
-            output_dir = session['workspaces'][message_value.workspace] + '_finished'
 
+            # make output folder
+            output_dir = session['workspaces'][message_value.workspace] + '_finished'
             os.makedirs(output_dir, exist_ok=True)
 
+            # copy remote to local folder
             shutil.copytree(os.path.join(share_drive_letter, message_value.workspace),
-                            output_dir,dirs_exist_ok=True)
-
+                            output_dir, dirs_exist_ok=True)

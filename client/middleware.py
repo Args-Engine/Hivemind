@@ -20,17 +20,21 @@ class Middleware:
             if getattr(module, 'onRegister', None) is not None and callable(module.onRegister):
                 module.onRegister(modules, self)
 
+    # inform modules that we connected to a server
     def connect_event(self, _: socket):
         for module in self.modules:
             if getattr(module, 'onConnect', None) is not None and callable(module.onConnect):
                 module.onConnect(self.session)
 
+    # check if a message is available
     def has_message(self):
         return self.session.to_send.qsize() > 0
 
+    # get a message from the Queue
     def emit(self):
         return self.session.to_send.get()
 
+    # receive messages from the server
     def ingest(self, message):
 
         # check if we support that message
@@ -44,7 +48,8 @@ class Middleware:
                 module.handle(name, message, self.session)
 
     def update(self) -> bool:
-        # print(self.addr)
+
+        # update each modules, watching out for ApplicationExists and EmitErrors
         for module in self.modules:
             if getattr(module, 'onUpdate', None) is not None and callable(module.onUpdate):
                 response = module.onUpdate()

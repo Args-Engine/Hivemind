@@ -9,22 +9,11 @@ from messages.execution_response import ExecutionResponse
 from server.layout.workspace_layout import Workspace, parse_instructions
 from server.session import Session
 
-
-# TODO this needs to become smarter:
-# - parse WAIT and RUN
-# - create command queue for each workspace session
-# - wait for WAITs and send Execution Done
-# -- possibly achieved with an atomic counter
-
-
 class SchedulerModule(ModuleBase):
 
     def __init__(self):
         super().__init__(["AvailableCores",
                           "ExecutionRequest"])
-        # self.tasks: Queue[Tuple[str, str]] = Queue()
-        # self.max_cpus = 0
-
         self.workspaces: Dict[str, Workspace] = {}
 
     def handle(self, message_name: str, message_value: Union[AvailableCores, ExecutionRequest],
@@ -49,7 +38,6 @@ class SchedulerModule(ModuleBase):
             # otherwise register how many cpus it has
             if 'cpu_count' in session:
                 session['cpu_count'] = message_value.available
-                # self.max_cpus += message_value.available
 
             # update the available cpus this client has
             session['cpu_available'] = message_value.available
@@ -85,8 +73,15 @@ class SchedulerModule(ModuleBase):
 
     def onUpdate(self):
         for workspace_id, workspace in self.workspaces.items():
-            if not workspace.can_get_next() and not workspace.blocked() and not workspace.destroy_on_sight:
+
+            # make really(!) sure that the workspace is done
+            if not workspace.can_get_next() and not workspace.blocked() and not workspace.destroy_on_sight and \
+                    len(workspace.current_running) == 0:
 
                 print(f"Workspace {workspace_id} needs to stop!")
+
+                # send the client the response that its environment is done
                 workspace.session.to_send.put(ExecutionDone(workspace=workspace_id))
+
+                # mark it for destruction
                 workspace.destroy_on_sight = True
