@@ -6,7 +6,15 @@ from messages import Tasks, AvailableCores
 from messages.execution_done import ExecutionDone
 from messages.execution_request import ExecutionRequest
 from messages.execution_response import ExecutionResponse
+from server.layout.workspace_layout import Workspace, parse_instructions
 from server.session import Session
+
+
+# TODO this needs to become smarter:
+# - parse WAIT and RUN
+# - create command queue for each workspace session
+# - wait for WAITs and send Execution Done
+# -- possibly achieved with an atomic counter
 
 
 class SchedulerModule(ModuleBase):
@@ -14,10 +22,10 @@ class SchedulerModule(ModuleBase):
     def __init__(self):
         super().__init__(["AvailableCores",
                           "ExecutionRequest"])
-        self.tasks: Queue[Tuple[str, str]] = Queue()
-        self.max_cpus = 0
+        # self.tasks: Queue[Tuple[str, str]] = Queue()
+        # self.max_cpus = 0
 
-        self.workspaces: Dict[str, Tuple[Session, int]] = {}
+        self.workspaces: Dict[str, Workspace] = {}
 
     def handle(self, message_name: str, message_value: Union[AvailableCores, ExecutionRequest],
                session: Session) -> NoReturn:
@@ -26,27 +34,13 @@ class SchedulerModule(ModuleBase):
         if message_name == "AvailableCores":
 
             # check the per workspace finishes
-            for workspace, finished in message_value.per_workspace.items():
+            for workspace_id, finished in message_value.per_workspace.items():
 
                 # get the workspace the runner worked for
-                data = self.workspaces.get(workspace, None)
-                if data is not None:
-
-                    # extract the data
-                    session, to_execute = data
-                    to_execute -= finished
-
-                    # check if the workspace is done
-                    if to_execute <= 0:
-
-                        # send the finish signal to the session of this workspace &
-                        # delete the workspace
-                        session.to_send.put(ExecutionDone(workspace))
-                        del self.workspaces[workspace]
-                    else:
-
-                        # re-insert the workspace with the updated parameters
-                        self.workspaces[workspace] = (session, to_execute)
+                workspace = self.workspaces.get(workspace_id, None)
+                if workspace is not None:
+                    # return tasks to the workspace
+                    workspace.task_returned(finished)
 
                 else:
                     print("Warning, this runner worked for a workspace that does not exist on the server")
@@ -55,28 +49,44 @@ class SchedulerModule(ModuleBase):
             # otherwise register how many cpus it has
             if 'cpu_count' in session:
                 session['cpu_count'] = message_value.available
-                self.max_cpus += message_value.available
+                # self.max_cpus += message_value.available
 
             # update the available cpus this client has
             session['cpu_available'] = message_value.available
 
-            # check how many tasks to send (may be empty!)
-            max_avail = min(session['cpu_available'], self.tasks.qsize())
+            tasks = []
 
-            # generate task list
-            tasks = [self.tasks.get() for _ in range(0, max_avail)]
+            # check how many tasks to send (may be empty!)
+            tasks_to_get = session['cpu_available']
+
+            # generate task lists with tasks from all workspaces
+            for workspace_id, workspace in self.workspaces.items():
+                while workspace.can_get_next() and tasks_to_get != 0:
+                    task = workspace.get_next()
+                    tasks += [(task.payload, workspace_id, task.unique_identifier)]
+
+            # make sure we don't have any ghost-workspaces
+            for workspace_id, workspace in self.workspaces.items():
+                if workspace.destroy_on_sight:
+                    del workspace
 
             # send tasks
             session.to_send.put(Tasks(tasks))
 
         if message_name == "ExecutionRequest":
-
-            # Get all tasks and put them in the queue
-            for task in message_value.tasklist:
-                self.tasks.put((task, message_value.workspace))
+            # Get all tasks and put them in the queue of the workspace
+            instructions = parse_instructions(message_value.tasklist)
 
             # create a new workspace session for the client
-            self.workspaces[message_value.workspace] = (session, len(message_value.tasklist))
+            self.workspaces[message_value.workspace] = Workspace(session, instructions)
 
             # respond that we accepted the execution request
             session.to_send.put(ExecutionResponse(accepted=True))
+
+    def onUpdate(self):
+        for workspace_id, workspace in self.workspaces.items():
+            if not workspace.can_get_next() and not workspace.blocked() and not workspace.destroy_on_sight:
+
+                print(f"Workspace {workspace_id} needs to stop!")
+                workspace.session.to_send.put(ExecutionDone(workspace=workspace_id))
+                workspace.destroy_on_sight = True

@@ -38,7 +38,7 @@ class DispatcherModule(ModuleBase):
             finished: Dict[str, int] = {}
 
             # check how many tasks per workspace have finished
-            while not self.finished_tasks_per_workspace.empty:
+            while not self.finished_tasks_per_workspace.empty():
                 workspace = self.finished_tasks_per_workspace.get()
                 if workspace not in finished:
                     finished[workspace] = 1
