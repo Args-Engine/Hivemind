@@ -3,7 +3,7 @@ import shlex
 
 
 class Runner:
-    def __init__(self, command, workspace):
+    def __init__(self, command, workspace,uid):
         self.workspace = workspace
         self.process = subprocess.Popen(
             shlex.split(command),
@@ -12,6 +12,7 @@ class Runner:
             shell=True,
             cwd="K:/" + workspace
         )
+        self.uid = uid
 
     def done(self) -> bool:
         p = self.process.poll()

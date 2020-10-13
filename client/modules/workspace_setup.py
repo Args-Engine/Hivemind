@@ -48,10 +48,11 @@ class WorkspaceSetup(ModuleBase):
                 return EmitError("Server refused execution of our script!")
 
         if message_name == "ExecutionDone":
+            print(f"Environment {session['workspaces'][message_value.workspace]} done")
             output_dir = session['workspaces'][message_value.workspace] + '_finished'
 
             os.makedirs(output_dir, exist_ok=True)
 
             shutil.copytree(os.path.join(share_drive_letter, message_value.workspace),
-                            output_dir)
+                            output_dir,dirs_exist_ok=True)
 

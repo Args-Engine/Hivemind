@@ -13,11 +13,11 @@ class DispatcherModule(ModuleBase):
     def __init__(self):
         super().__init__(["Tasks", "Ping"])
 
-        self.task_queue: Queue[Tuple[str, str]] = Queue()
+        self.task_queue: Queue[Tuple[str, str, str]] = Queue()
         self.genesis_not_sent = True
         self.runners: List[Runner] = []
         self.in_use = 0
-        self.finished_tasks_per_workspace: Queue[str] = Queue()
+        self.finished_tasks_per_workspace: Queue[Tuple[str,str]] = Queue()
 
     def handle(self, message_name: str, message_value: Union[Tasks, Ping], session: SessionBase) -> NoReturn:
 
@@ -35,14 +35,14 @@ class DispatcherModule(ModuleBase):
             for task in message_value.tasks:
                 self.task_queue.put(task)
 
-            finished: Dict[str, int] = {}
+            finished: Dict[str, List[str]] = {}
 
             # check how many tasks per workspace have finished
-            while not self.finished_tasks_per_workspace.empty:
-                workspace = self.finished_tasks_per_workspace.get()
+            while not self.finished_tasks_per_workspace.empty():
+                (workspace, uid) = self.finished_tasks_per_workspace.get()
                 if workspace not in finished:
-                    finished[workspace] = 1
-                finished[workspace] += 1
+                    finished[workspace] = [uid]
+                finished[workspace] += [uid]
 
             # respond with how many cores we will have available after scheduling these tasks
             session.to_send.put(
@@ -55,12 +55,12 @@ class DispatcherModule(ModuleBase):
             self.in_use += 1
 
             # run the task if cpu cores are available & tasks are available
-            (command, workspace) = self.task_queue.get()
-            self.runners.append(Runner(command, workspace))
+            (command, workspace, uid) = self.task_queue.get()
+            self.runners.append(Runner(command, workspace, uid))
 
         # check if some runners already finished
         for runner in self.runners:
             if runner.done():
-                self.finished_tasks_per_workspace.put(runner.workspace)
+                self.finished_tasks_per_workspace.put((runner.workspace,runner.uid))
                 self.in_use -= 1
                 self.runners.remove(runner)
