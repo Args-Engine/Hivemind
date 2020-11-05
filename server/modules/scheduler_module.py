@@ -72,6 +72,8 @@ class SchedulerModule(ModuleBase):
             session.to_send.put(ExecutionResponse(accepted=True))
 
     def onUpdate(self):
+
+        #TODO(algo-ryth-mix): this can break if the other thread deletes elements while we are iterating through it!
         for workspace_id, workspace in self.workspaces.items():
 
             # make really(!) sure that the workspace is done
