@@ -8,3 +8,5 @@ consists of 3 core-parts
 - Common
 
 Server and Client communication is done via a MessageFrame system with multiple modules listening on indiviudal message-types
+
+also check the [wikipage](https://github.com/Legion-Engine/Hivemind/wiki)
